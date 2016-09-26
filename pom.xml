@@ -41,6 +41,7 @@
     <module>concurrent-map-entity/integration-tests</module>
     <module>client-communicator-support</module>
     <module>healthchecker-entity</module>
+    <module>toolkit</module>
     <module>management</module>
     <module>runnel</module>
   </modules>
