@@ -15,12 +15,18 @@
  */
 package org.terracotta.toolkit;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observer;
 import java.util.Queue;
 import org.terracotta.entity.EndpointDelegate;
+import org.terracotta.entity.EntityClientEndpoint;
 import org.terracotta.entity.EntityResponse;
+import org.terracotta.entity.MessageCodecException;
+import org.terracotta.exception.EntityException;
 import org.terracotta.toolkit.barrier.Barrier;
 import org.terracotta.toolkit.barrier.BarrierConfig;
 import org.terracotta.toolkit.list.ListConfig;
@@ -30,15 +36,87 @@ import org.terracotta.toolkit.queue.QueueConfig;
 
 
 public class TerracottaToolkit implements Toolkit, EndpointDelegate {
+  
+  private final EntityClientEndpoint<ToolkitMessage, ToolkitResponse> endpoint;
+  private final Map<String, ToolkitReference> references = new HashMap<String, ToolkitReference>();
+  private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
+  
+  public TerracottaToolkit(EntityClientEndpoint<ToolkitMessage, ToolkitResponse> endpoint) {
+    this.endpoint = endpoint;
+  }
+  
+  private static String buildName(Class type, String name) {
+    return type.getName() + ":" + name;
+  }
+  
+  private void cleanup() {
+    ToolkitReference ref = (ToolkitReference)queue.poll();
+    while (ref != null) {
+      String refName = ref.getName();
+      release(refName);
+    }
+  }
+  
+  private synchronized void release(String name) {
+    
+  }
+  
+  private Object createType(Class type, String name) {
+    if (type == Barrier.class) {
+      return new TerracottaBarrier(endpoint, name);
+    }
+    return null;
+  }
+  
+  private synchronized Object acquire(Class type, String name, boolean create) {
+    cleanup();
+    try {
+      String tname = buildName(type, name);
+      Object delegate = null;
+      while (delegate != null) {
+        delegate = createType(type, name);
+        ToolkitReference placed = references.putIfAbsent(tname, new ToolkitReference(tname, delegate));
+        if (placed != null) {
+          delegate = placed.get();
+        } else {
+          ToolkitResponse resp = (create) ?                   
+                  endpoint.beginInvoke().message(new CreateToolkitObject(type.getName(), name)).invoke().get()
+          :
+                  endpoint.beginInvoke().message(new GetToolkitObject(type.getName(), name)).invoke().get();
+          switch (resp.result()) {
+            case SUCCESS:
+              break;
+            case FAIL:
+              throw new RuntimeException();
+          }
+        }
+      }
+    } catch (EntityException ee) {
+      
+    } catch (InterruptedException ie) {
+      
+    } catch (MessageCodecException me) {
+      
+    }
+    return null;
+  }
+  
+  private <T> T getToolkitObject(Class<T> type, String name) {
+    return type.cast(acquire(type, name, false));
+  }
+  
+  private <T> T createToolkitObject(Class<T> type, String name) {
+    return type.cast(acquire(type, name, true));
+  }
 
   @Override
   public Barrier createBarrier(String name, BarrierConfig parties) throws ToolkitObjectExists {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    return createToolkitObject(Barrier.class, name);
   }
 
   @Override
   public Barrier getBarrier(String name) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    return getToolkitObject(Barrier.class, name);
   }
 
   @Override
@@ -101,4 +179,15 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
+  private class ToolkitReference extends WeakReference<Object> {
+    private final String name;
+    public ToolkitReference(String name, Object toolkitObject) {
+      super(toolkitObject, queue);
+      this.name = name;
+    }
+    
+    String getName() {
+      return name;
+    }
+  }
 }

@@ -15,53 +15,124 @@
  */
 package org.terracotta.toolkit;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.terracotta.entity.ActiveServerEntity;
 import org.terracotta.entity.ClientDescriptor;
-import org.terracotta.entity.EntityMessage;
-import org.terracotta.entity.EntityResponse;
 import org.terracotta.entity.PassiveSynchronizationChannel;
 
 
-public class TerracottaToolkitServerEntity implements ActiveServerEntity<EntityMessage, EntityResponse> {
-
+public class TerracottaToolkitServerEntity implements ActiveServerEntity<ToolkitMessage, ToolkitResponse> {
+  private final Map<String, ServerHandler> objectSpace = new HashMap<>();
   @Override
   public void connected(ClientDescriptor cd) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
   @Override
   public void disconnected(ClientDescriptor cd) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
   @Override
-  public EntityResponse invoke(ClientDescriptor cd, EntityMessage m) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  public ToolkitResponse invoke(ClientDescriptor cd, ToolkitMessage m) {
+    switch(m.command()) {
+      case CREATE:
+        return createToolkitObject(cd, m);
+      case GET:
+        return referenceToolkitObject(cd, m);
+      case RELEASE:
+        return dropToolkitObject(cd, m);
+      default:
+        throw new RuntimeException();
+    }
+  }
+  
+  private ToolkitResponse dropToolkitObject(ClientDescriptor cd, ToolkitMessage m) {
+    String name = buildName(m);
+    ServerHandler handler = objectSpace.get(name);
+    if (handler == null) {
+      return fail();
+    } else {
+      int count = handler.dereference(cd);
+      if (count == 0) {
+        objectSpace.remove(name);
+      }
+      return success();
+    }
+  }  
+  
+  private ToolkitResponse referenceToolkitObject(ClientDescriptor cd, ToolkitMessage m) {
+    String name = buildName(m);
+    ServerHandler handler = objectSpace.get(name);
+    if (handler == null) {
+      return fail();
+    } else {
+      handler.reference(cd);
+      return success();
+    }
+  }  
+  
+  private ToolkitResponse createToolkitObject(ClientDescriptor cd, ToolkitMessage m) {
+    String name = buildName(m);
+    ServerHandler handler = objectSpace.putIfAbsent(name, new ServerHandler(cd) {
+      @Override
+      ToolkitResponse handleMessage(byte[] raw) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      }
+    });
+    if (handler != null) {
+      return fail();
+    } else {
+      return success();
+    }
+  }
+
+  private static ToolkitResponse success() {
+    return new ToolkitResponse() {
+      @Override
+      public ToolkitResult result() {
+        return ToolkitResult.SUCCESS;
+      }
+    };
+  }
+  
+  private static ToolkitResponse fail() {
+    return new ToolkitResponse() {
+      @Override
+      public ToolkitResult result() {
+        return ToolkitResult.FAIL;
+      }
+    };
+  }
+  
+  private static String buildName(ToolkitMessage m) {
+    return m.type() + ":" + m.name();
   }
 
   @Override
   public void handleReconnect(ClientDescriptor cd, byte[] bytes) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
   @Override
-  public void synchronizeKeyToPassive(PassiveSynchronizationChannel<EntityMessage> psc, int i) {
+  public void synchronizeKeyToPassive(PassiveSynchronizationChannel<ToolkitMessage> psc, int i) {
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public void createNew() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
   @Override
   public void loadExisting() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
   @Override
   public void destroy() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
   }
 
 }

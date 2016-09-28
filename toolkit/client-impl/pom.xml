@@ -21,7 +21,7 @@
 
   <parent>
     <groupId>org.terracotta</groupId>
-    <artifactId>toolkit</artifactId>
+    <artifactId>toolkit-root</artifactId>
     <version>5.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>

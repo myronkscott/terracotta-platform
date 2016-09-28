@@ -15,33 +15,89 @@
  */
 package org.terracotta.toolkit;
 
-import org.terracotta.entity.EntityMessage;
-import org.terracotta.entity.EntityResponse;
 
+import java.nio.ByteBuffer;
 import org.terracotta.entity.MessageCodec;
 import org.terracotta.entity.MessageCodecException;
+import org.terracotta.runnel.EnumMapping;
+import org.terracotta.runnel.EnumMappingBuilder;
+import org.terracotta.runnel.Struct;
+import org.terracotta.runnel.StructBuilder;
+import org.terracotta.runnel.decoding.StructDecoder;
 
 
-public class ToolkitCodec implements MessageCodec<EntityMessage, EntityResponse> {
+public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitResponse> {
+
+  private static final EnumMapping TOOLKIT_CMDS = EnumMappingBuilder.newEnumMappingBuilder(ToolkitCommand.class)
+          .mapping(ToolkitCommand.CREATE, 1)
+          .mapping(ToolkitCommand.GET, 2)
+          .mapping(ToolkitCommand.RELEASE, 3).build();
+
+  private static final Struct TOOLKIT_STRUCT = StructBuilder.newStructBuilder()
+          .enm("cmd", 1, TOOLKIT_CMDS)
+          .string("type", 2)
+          .string("name", 3)
+          .byteBuffer("extra", 4)
+          .build();  
+  
+  private static final EnumMapping TOOLKIT_RESULTS = EnumMappingBuilder.newEnumMappingBuilder(ToolkitResult.class)
+          .mapping(ToolkitResult.SUCCESS, 1)
+          .mapping(ToolkitResult.FAIL, 2).build();
+  
+  private static final Struct TOOLKIT_RESPONSE = StructBuilder.newStructBuilder()
+          .enm("result", 1, TOOLKIT_RESULTS)
+          .build();
 
   @Override
-  public byte[] encodeMessage(EntityMessage m) throws MessageCodecException {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  public byte[] encodeMessage(ToolkitMessage m) throws MessageCodecException {
+    ByteBuffer buffer = TOOLKIT_STRUCT.encoder().enm("cmd", m.command())
+            .string("type", m.type())
+            .string("name", m.name())
+            .byteBuffer("payload", ByteBuffer.wrap(m.payload())).encode();
+    byte[] data = new byte[buffer.remaining()];
+    buffer.get(data);
+    return data;
   }
 
   @Override
-  public EntityMessage decodeMessage(byte[] bytes) throws MessageCodecException {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  public ToolkitMessage decodeMessage(byte[] bytes) throws MessageCodecException {
+    StructDecoder decode = TOOLKIT_STRUCT.decoder(ByteBuffer.wrap(bytes));
+    ToolkitCommand cmd = decode.enm("cmd");
+    String type = decode.string("type");
+    String name = decode.string("name");
+    ByteBuffer payload = decode.byteBuffer("payload");
+    return translate(cmd, type, name, payload);
+  }
+  
+  private static ToolkitMessage translate(ToolkitCommand cmd, String type, String name, ByteBuffer payload) {
+    switch (cmd) {
+      case GET:
+        return new GetToolkitObject(type, name);
+      case CREATE:
+        return new CreateToolkitObject(type, name);
+      default:
+        throw new IllegalArgumentException(cmd + " " + type + " " + name);
+    }
   }
 
   @Override
-  public byte[] encodeResponse(EntityResponse r) throws MessageCodecException {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  public byte[] encodeResponse(ToolkitResponse r) throws MessageCodecException {
+    ByteBuffer buf = TOOLKIT_RESPONSE.encoder()
+            .enm("result", r.result())
+            .encode();
+    byte[] send = new byte[buf.remaining()];
+    buf.get(send);
+    return send;
   }
 
   @Override
-  public EntityResponse decodeResponse(byte[] bytes) throws MessageCodecException {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  public ToolkitResponse decodeResponse(final byte[] bytes) throws MessageCodecException {
+    return new ToolkitResponse() {
+      @Override
+      public ToolkitResult result() {
+        return TOOLKIT_RESPONSE.decoder(ByteBuffer.wrap(bytes)).enm("result");
+      }
+    };
   }
   
 }

@@ -21,7 +21,7 @@
 
   <parent>
     <groupId>org.terracotta</groupId>
-    <artifactId>toolkit</artifactId>
+    <artifactId>toolkit-root</artifactId>
     <version>5.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
@@ -41,12 +41,6 @@
     <dependency>
       <groupId>org.terracotta</groupId>
       <artifactId>client-communicator-support</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>toolkit-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

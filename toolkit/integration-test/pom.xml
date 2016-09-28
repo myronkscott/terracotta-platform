@@ -16,7 +16,9 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -26,47 +28,49 @@
     <relativePath>..</relativePath>
   </parent>
 
-  <artifactId>toolkit-server</artifactId>
-  
-  <properties>
-    <java.build.version>1.8</java.build.version>
-  </properties>
-  
+  <artifactId>toolkit-test</artifactId>
+
   <dependencies>
-  <dependency>
-      <groupId>org.terracotta</groupId>
-      <artifactId>toolkit-common</artifactId>
-      <version>${project.version}</version>
-  </dependency>
     <dependency>
       <groupId>org.terracotta</groupId>
-      <artifactId>entity-server-api</artifactId>
-      <scope>provided</scope>
+      <artifactId>toolkit-server</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-        <groupId>org.terracotta</groupId>
-        <artifactId>packaging-support</artifactId>
-        <scope>provided</scope>
+      <groupId>org.terracotta</groupId>
+      <artifactId>toolkit-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>passthrough-server</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>galvan</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>galvan-support</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-all</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
-    <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+  <build>
+  <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -75,6 +79,6 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-    </plugins>
-    </build>
+  </plugins>
+  </build>
 </project>
