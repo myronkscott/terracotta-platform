@@ -45,25 +45,39 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     this.endpoint = endpoint;
   }
   
-  private static String buildName(Class type, String name) {
-    return type.getName() + ":" + name;
+  private static String buildName(String type, String name) {
+    return type + ":" + name;
   }
   
   private void cleanup() {
     ToolkitReference ref = (ToolkitReference)queue.poll();
     while (ref != null) {
-      String refName = ref.getName();
-      release(refName);
+      release(ref.getType(), ref.getName());
     }
   }
   
-  private synchronized void release(String name) {
-    
+  private synchronized void release(String type, String name) {
+    ToolkitReference ref = references.remove(buildName(type, name));
+    if (ref != null) {
+      try {
+        ToolkitResponse response = endpoint.beginInvoke().message(new ReleaseToolkitObject(type, name)).invoke().get();
+      } catch (EntityException ee) {
+        ee.printStackTrace();
+      } catch (InterruptedException ie) {
+        ie.printStackTrace();
+      } catch (MessageCodecException me) {
+        me.printStackTrace();
+      }
+    }
   }
   
-  private Object createType(Class type, String name) {
+  public void release(ToolkitObject object) {
+    release(object.getType(), object.getName());
+  }
+  
+  private ToolkitObject createType(Class type, String name) {
     if (type == Barrier.class) {
-      return new TerracottaBarrier(endpoint, name);
+      return new TerracottaBarrier(this, endpoint, type.getName(), name);
     }
     return null;
   }
@@ -71,11 +85,11 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
   private synchronized Object acquire(Class type, String name, boolean create) {
     cleanup();
     try {
-      String tname = buildName(type, name);
-      Object delegate = null;
-      while (delegate != null) {
+      String tname = buildName(type.getName(), name);
+      ToolkitObject delegate = null;
+      while (delegate == null) {
         delegate = createType(type, name);
-        ToolkitReference placed = references.putIfAbsent(tname, new ToolkitReference(tname, delegate));
+        ToolkitReference placed = references.putIfAbsent(tname, new ToolkitReference(delegate));
         if (placed != null) {
           delegate = placed.get();
         } else {
@@ -85,18 +99,18 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
                   endpoint.beginInvoke().message(new GetToolkitObject(type.getName(), name)).invoke().get();
           switch (resp.result()) {
             case SUCCESS:
-              break;
+              return delegate;
             case FAIL:
               throw new RuntimeException();
           }
         }
       }
     } catch (EntityException ee) {
-      
+      throw new RuntimeException(ee);
     } catch (InterruptedException ie) {
-      
+      throw new RuntimeException(ie);
     } catch (MessageCodecException me) {
-      
+      throw new RuntimeException(me);
     }
     return null;
   }
@@ -179,15 +193,21 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
-  private class ToolkitReference extends WeakReference<Object> {
+  private class ToolkitReference extends WeakReference<ToolkitObject> {
     private final String name;
-    public ToolkitReference(String name, Object toolkitObject) {
+    private final String type;
+    public ToolkitReference(ToolkitObject toolkitObject) {
       super(toolkitObject, queue);
-      this.name = name;
+      this.name = toolkitObject.getName();
+      this.type = toolkitObject.getType();
     }
     
     String getName() {
       return name;
+    }
+    
+    String getType() {
+      return type;
     }
   }
 }

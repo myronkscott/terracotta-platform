@@ -1,13 +1,10 @@
-package org.terracotta.kit_testing;
+package org.terracotta.toolkit;
 
 import java.util.List;
 import java.util.Vector;
 import org.terracotta.testing.api.BasicTestClusterConfiguration;
 
-import org.terracotta.toolkit.TerracottaToolkitEntityServerService;
 import org.terracotta.testing.demos.TestHelpers;
-import org.terracotta.toolkit.KitTestBasic;
-import org.terracotta.toolkit.ToolkitTest;
 
 
 public class ToolkitGalvanTest extends KitTestBasic {
@@ -40,7 +37,7 @@ public class ToolkitGalvanTest extends KitTestBasic {
 
   @Override
   public int getClientsToStart() {
-    return 2;
+    return 1;
   }
 
   @Override

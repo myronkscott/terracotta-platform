@@ -24,7 +24,7 @@ import org.terracotta.entity.ClientDescriptor;
  */
 public abstract class ServerHandler {
   
-  private int referenceCount = 0;
+  private int referenceCount = 1;
   private final ClientDescriptor creator;
   private final Set<ClientDescriptor> refers = new HashSet<>();
 
@@ -39,12 +39,18 @@ public abstract class ServerHandler {
     if (refers.add(ref)) {
       referenceCount += 1;
     }
+    if (referenceCount != refers.size()) {
+      throw new AssertionError("refcount != set " + referenceCount + " " + refers.size());
+    }
     return referenceCount;
   }
   
   public int dereference(ClientDescriptor ref) {
     if (refers.remove(ref)) {
       referenceCount -= 1;
+    }
+    if (referenceCount != refers.size()) {
+      throw new AssertionError("refcount != set " + referenceCount + " " + refers.size());
     }
     return referenceCount;
   }

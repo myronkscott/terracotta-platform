@@ -15,22 +15,24 @@
  */
 package org.terracotta.toolkit;
 
+import java.nio.ByteBuffer;
+
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
+public class ReleaseToolkitObject implements ToolkitMessage {
   private final String type;
   private final String name;
-  private final byte[] payload = new byte[1];
+  private final byte[] payload = new byte[0];
 
-  public CreateToolkitObject(String type, String name) {
+  public ReleaseToolkitObject(String type, String name) {
     this.type = type;
     this.name = name;
   }
 
   @Override
   public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
+    return ToolkitCommand.RELEASE;
   }
 
   @Override

@@ -15,8 +15,10 @@
  */
 package org.terracotta.toolkit.barrier;
 
+import org.terracotta.toolkit.ToolkitObject;
 
-public interface Barrier {
+
+public interface Barrier extends ToolkitObject {
   int getParties();
   int await() throws InterruptedException;
 }

@@ -1,5 +1,6 @@
 package org.terracotta.toolkit;
 
+import com.tc.util.Assert;
 import org.terracotta.connection.Connection;
 import org.terracotta.connection.entity.EntityRef;
 import org.terracotta.passthrough.IClientTestEnvironment;
@@ -38,7 +39,16 @@ public class ToolkitTest implements ICommonTest {
     }
     EntityRef<Toolkit, ToolkitConfig> ref = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
     Toolkit toolkit = ref.fetchEntity();
-    Barrier barrier = toolkit.createBarrier("my-barrier", new BarrierConfig());
-    System.out.println(barrier);
+    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Assert.assertNotNull(b);
+    b.close();
+    try {
+      b.await();
+      Assert.fail();
+    } catch (Exception exp) {
+      // expected;
+    }
+    b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Assert.assertNotNull(b);
   }
 }

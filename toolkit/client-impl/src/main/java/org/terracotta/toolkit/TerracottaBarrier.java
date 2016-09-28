@@ -15,24 +15,84 @@
  */
 package org.terracotta.toolkit;
 
-import org.terracotta.connection.Connection;
-import org.terracotta.connection.entity.EntityRef;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.terracotta.entity.EntityClientEndpoint;
-import org.terracotta.exception.EntityNotFoundException;
-import org.terracotta.exception.EntityNotProvidedException;
-import org.terracotta.exception.EntityVersionMismatchException;
+import org.terracotta.toolkit.barrier.Barrier;
 
 /**
  *
  */
-public class TerracottaBarrier {
+public class TerracottaBarrier implements Barrier {
   private final String name;
+  private final String type;
   private final EntityClientEndpoint<ToolkitMessage, ToolkitResponse> endpoint;
+  private final TerracottaToolkit toolkit;
+  private final ReadWriteLock closeLock;
+  private boolean closed = false;
 
-  public TerracottaBarrier(EntityClientEndpoint<ToolkitMessage, ToolkitResponse> endpoint, String name) {
+  public TerracottaBarrier(TerracottaToolkit owner, EntityClientEndpoint<ToolkitMessage, ToolkitResponse> endpoint, String type, String name) {
+    this.toolkit = owner;
     this.name = name;
+    this.type = type;
     this.endpoint = endpoint;
+    this.closeLock = new ReentrantReadWriteLock();
   }
-  
-  
+
+  @Override
+  public String getType() {
+    return this.type;
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public int getParties() {
+    Lock lock = closeLock.readLock();
+    lock.lock();
+    try {
+      if (!closed) {
+        
+      } else {
+        throw new IllegalStateException();
+      }
+    } finally {
+      lock.unlock();
+    }
+    return 0;
+  }
+
+  @Override
+  public int await() throws InterruptedException {
+    Lock lock = closeLock.readLock();
+    lock.lock();
+    try {
+      if (!closed) {
+        
+      } else {
+        throw new IllegalStateException();
+      }
+    } finally {
+      lock.unlock();
+    }
+    return 0;
+  }
+
+  @Override
+  public void close() throws Exception {
+    Lock lock = closeLock.writeLock();
+    lock.lock();
+    try {
+      if (!closed) {
+        closed = true;
+        toolkit.release(this);
+      }
+    } finally {
+      lock.unlock();
+    }
+  }
 }

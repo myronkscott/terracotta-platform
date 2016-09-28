@@ -37,7 +37,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
           .enm("cmd", 1, TOOLKIT_CMDS)
           .string("type", 2)
           .string("name", 3)
-          .byteBuffer("extra", 4)
+          .byteBuffer("payload", 4)
           .build();  
   
   private static final EnumMapping TOOLKIT_RESULTS = EnumMappingBuilder.newEnumMappingBuilder(ToolkitResult.class)
@@ -54,7 +54,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
             .string("type", m.type())
             .string("name", m.name())
             .byteBuffer("payload", ByteBuffer.wrap(m.payload())).encode();
-    byte[] data = new byte[buffer.remaining()];
+    byte[] data = new byte[buffer.flip().remaining()];
     buffer.get(data);
     return data;
   }
@@ -75,6 +75,8 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
         return new GetToolkitObject(type, name);
       case CREATE:
         return new CreateToolkitObject(type, name);
+      case RELEASE:
+        return new ReleaseToolkitObject(type, name);
       default:
         throw new IllegalArgumentException(cmd + " " + type + " " + name);
     }
@@ -85,7 +87,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
     ByteBuffer buf = TOOLKIT_RESPONSE.encoder()
             .enm("result", r.result())
             .encode();
-    byte[] send = new byte[buf.remaining()];
+    byte[] send = new byte[buf.flip().remaining()];
     buf.get(send);
     return send;
   }

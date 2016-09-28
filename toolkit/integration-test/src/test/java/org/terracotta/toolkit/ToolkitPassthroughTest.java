@@ -16,6 +16,7 @@ package org.terracotta.toolkit;
  * limitations under the License.
  */
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.terracotta.connection.entity.EntityRef;
@@ -60,6 +61,16 @@ public class ToolkitPassthroughTest {
     PassthroughConnection connection = server.connectNewClient("connectionName");
     EntityRef<Toolkit, Object> entityRef = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
     Toolkit toolkit = entityRef.fetchEntity();
-    Barrier b = toolkit.createBarrier("my-barrrier", new BarrierConfig());
+    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Assert.assertNotNull(b);
+    b.close();
+    try {
+      b.await();
+      Assert.fail();
+    } catch (Exception exp) {
+      // expected;
+    }
+    b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Assert.assertNotNull(b);
   }
 }

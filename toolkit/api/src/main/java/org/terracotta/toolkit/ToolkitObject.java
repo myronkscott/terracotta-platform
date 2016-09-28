@@ -18,34 +18,7 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
-  private final String type;
-  private final String name;
-  private final byte[] payload = new byte[1];
-
-  public CreateToolkitObject(String type, String name) {
-    this.type = type;
-    this.name = name;
-  }
-
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
-  }
-
-  @Override
-  public String type() {
-    return type;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
-  }
-  
+public interface ToolkitObject extends AutoCloseable {
+  String getName();
+  String getType();
 }

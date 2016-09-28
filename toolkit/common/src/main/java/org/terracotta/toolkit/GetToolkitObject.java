@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 public class GetToolkitObject implements ToolkitMessage {
   private final String type;
   private final String name;
+  private final byte[] payload = new byte[0];
 
   public GetToolkitObject(String type, String name) {
     this.type = type;
@@ -46,7 +47,7 @@ public class GetToolkitObject implements ToolkitMessage {
 
   @Override
   public byte[] payload() {
-    return null;
+    return payload;
   }
   
 }
