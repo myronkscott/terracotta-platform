@@ -29,6 +29,14 @@
   </parent>
 
   <artifactId>toolkit-test</artifactId>
+  
+  <properties>
+    <kitVersion>5.0.0-SNAPSHOT</kitVersion>
+        <!--  Properties passed into the system-tests testing framework to run on the kit -->
+    <kitUnzipLocation>${project.build.testOutputDirectory}/kit</kitUnzipLocation>
+    <kitInstallationPath>${kitUnzipLocation}/terracotta-${kitVersion}</kitInstallationPath>
+    <kitTestDirectory>${project.build.testOutputDirectory}/testing_directory</kitTestDirectory>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -59,6 +67,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.terracotta.internal</groupId>
+      <artifactId>terracotta-kit</artifactId>
+      <version>${kitVersion}</version>
+      <type>zip</type>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -79,6 +93,100 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+  <plugin>
+          <!-- we include the surefire plugin to get a known version and to always tell
+               it to skip tests. The toolkit resolver plugin is the actual thing that runs
+               tests -->
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+              <argLine>${surefire.argLine}</argLine>
+              <forkCount>1</forkCount>
+              <reuseForks>false</reuseForks>
+              <!--  We need to pass in the locations where the kit and testing directories are for the framework can use
+                    them -->
+              <systemPropertyVariables>
+                <kitInstallationPath>${kitInstallationPath}</kitInstallationPath>
+                <kitTestDirectory>${kitTestDirectory}</kitTestDirectory>
+                <!--  We will also pass the debug options in this way -->
+                <setupClientDebugPort>${setupClientDebugPort}</setupClientDebugPort>
+                <destroyClientDebugPort>${destroyClientDebugPort}</destroyClientDebugPort>
+                <testClientDebugPortStart>${testClientDebugPortStart}</testClientDebugPortStart>
+                <serverDebugPortStart>${serverDebugPortStart}</serverDebugPortStart>
+              </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.8</version>
+          <executions>
+         <execution>
+            <id>install-kit</id>
+            <!--  NOTE:  This is in process-test-classes since it will attempt to run AFTER the test, if in test -->
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.terracotta.internal</groupId>
+                  <artifactId>terracotta-kit</artifactId>
+                  <version>${kitVersion}</version>
+                  <type>zip</type>
+                  <!-- We need to over-write since the default logic used by Maven is too quick to assume the files are already there (even when they clearly aren't) -->
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${kitUnzipLocation}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
+              <id>build-full-classpath</id>
+              <phase>integration-test</phase>
+              <goals>
+                <goal>build-classpath</goal>
+              </goals>
+              <configuration>
+                <outputFile>${project.build.directory}/classpath.txt</outputFile>
+              </configuration>
+            </execution>
+            <execution>
+              <id>build-compile-classpath</id>
+              <phase>integration-test</phase>
+              <goals>
+                <goal>build-classpath</goal>
+              </goals>
+              <configuration>
+                <includeScope>compile</includeScope>
+                <outputFile>${project.build.directory}/compile-classpath.txt</outputFile>
+              </configuration>
+            </execution>
+            <execution>
+              <id>build-test-classpath</id>
+              <phase>integration-test</phase>
+              <goals>
+                <goal>build-classpath</goal>
+              </goals>
+              <configuration>
+                <includeScope>test</includeScope>
+                <outputFile>${project.build.directory}/test-classpath.txt</outputFile>
+              </configuration>
+            </execution>
+            <execution>
+              <id>build-runtime-classpath</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>build-classpath</goal>
+              </goals>
+              <configuration>
+                <includeScope>runtime</includeScope>
+                <outputFile>${project.build.directory}/runtime-classpath.txt</outputFile>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
   </plugins>
   </build>
 </project>
