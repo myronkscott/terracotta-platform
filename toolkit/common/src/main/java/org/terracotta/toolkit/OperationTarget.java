@@ -15,37 +15,30 @@
  */
 package org.terracotta.toolkit;
 
+import org.terracotta.entity.EntityMessage;
+import org.terracotta.entity.EntityResponse;
+import org.terracotta.entity.MessageCodec;
+import org.terracotta.entity.MessageCodecException;
+
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
+public class OperationTarget<S extends EntityMessage, R extends EntityResponse> {
   private final String type;
   private final String name;
-  private final byte[] payload = new byte[0];
+  private final MessageCodec<S, R> codec;
 
-  public CreateToolkitObject(String type, String name) {
+  public OperationTarget(String type, String name, MessageCodec<S, R> codec) {
     this.type = type;
     this.name = name;
+    this.codec = codec;
   }
 
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
-  }
-
-  @Override
-  public String type() {
-    return type;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
+  public ToolkitOperation target(S message) throws MessageCodecException {
+    return new ToolkitOperation(type, name, codec.encodeMessage(message));
   }
   
+  public R process(ToolkitResponse resp) throws MessageCodecException {
+    return codec.decodeResponse(resp.payload());
+  }
 }

@@ -61,7 +61,7 @@ public class ToolkitPassthroughTest {
     PassthroughConnection connection = server.connectNewClient("connectionName");
     EntityRef<Toolkit, Object> entityRef = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
     Toolkit toolkit = entityRef.fetchEntity();
-    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
     Assert.assertNotNull(b);
     b.close();
     try {
@@ -70,7 +70,7 @@ public class ToolkitPassthroughTest {
     } catch (Exception exp) {
       // expected;
     }
-    b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
     Assert.assertNotNull(b);
   }
 }

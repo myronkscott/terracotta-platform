@@ -19,5 +19,13 @@ package org.terracotta.toolkit.barrier;
  *
  */
 public class BarrierConfig {
+  private final int parties;
+
+  public BarrierConfig(int parties) {
+    this.parties = parties;
+  }
   
+  public int parties() {
+    return parties;
+  }
 }

@@ -18,19 +18,20 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
+public class ToolkitOperation implements ToolkitMessage {
   private final String type;
   private final String name;
-  private final byte[] payload = new byte[0];
+  private final byte[] payload;
 
-  public CreateToolkitObject(String type, String name) {
+  public ToolkitOperation(String type, String name, byte[] payload) {
     this.type = type;
     this.name = name;
+    this.payload = payload;
   }
 
   @Override
   public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
+    return ToolkitCommand.OPERATION;
   }
 
   @Override
@@ -47,5 +48,4 @@ public class CreateToolkitObject implements ToolkitMessage {
   public byte[] payload() {
     return payload;
   }
-  
 }

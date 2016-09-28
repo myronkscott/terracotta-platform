@@ -31,7 +31,8 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
   private static final EnumMapping TOOLKIT_CMDS = EnumMappingBuilder.newEnumMappingBuilder(ToolkitCommand.class)
           .mapping(ToolkitCommand.CREATE, 1)
           .mapping(ToolkitCommand.GET, 2)
-          .mapping(ToolkitCommand.RELEASE, 3).build();
+          .mapping(ToolkitCommand.RELEASE, 3)
+          .mapping(ToolkitCommand.OPERATION, 4).build();
 
   private static final Struct TOOLKIT_STRUCT = StructBuilder.newStructBuilder()
           .enm("cmd", 1, TOOLKIT_CMDS)
@@ -46,6 +47,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
   
   private static final Struct TOOLKIT_RESPONSE = StructBuilder.newStructBuilder()
           .enm("result", 1, TOOLKIT_RESULTS)
+          .byteBuffer("payload", 2)
           .build();
 
   @Override
@@ -69,7 +71,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
     return translate(cmd, type, name, payload);
   }
   
-  private static ToolkitMessage translate(ToolkitCommand cmd, String type, String name, ByteBuffer payload) {
+  private static ToolkitMessage translate(ToolkitCommand cmd, String type, String name, final ByteBuffer payload) {
     switch (cmd) {
       case GET:
         return new GetToolkitObject(type, name);
@@ -77,6 +79,10 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
         return new CreateToolkitObject(type, name);
       case RELEASE:
         return new ReleaseToolkitObject(type, name);
+      case OPERATION:
+        byte[] data = new byte[payload.remaining()];
+        payload.get(data);
+        return new ToolkitOperation(type, name, data);
       default:
         throw new IllegalArgumentException(cmd + " " + type + " " + name);
     }
@@ -94,10 +100,16 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
 
   @Override
   public ToolkitResponse decodeResponse(final byte[] bytes) throws MessageCodecException {
+    final ByteBuffer buffer = ByteBuffer.wrap(bytes);
     return new ToolkitResponse() {
       @Override
       public ToolkitResult result() {
-        return TOOLKIT_RESPONSE.decoder(ByteBuffer.wrap(bytes)).enm("result");
+        return TOOLKIT_RESPONSE.decoder(buffer).enm("result");
+      }
+
+      @Override
+      public byte[] payload() {
+        return TOOLKIT_RESPONSE.decoder(buffer).enm("payload");
       }
     };
   }

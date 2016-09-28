@@ -13,39 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terracotta.toolkit;
+package org.terracotta.toolkit.barrier;
+
+import java.util.UUID;
+import org.terracotta.entity.EntityMessage;
 
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
-  private final String type;
-  private final String name;
-  private final byte[] payload = new byte[0];
+public class BarrierRequest implements EntityMessage {
+  private final UUID uuid;
 
-  public CreateToolkitObject(String type, String name) {
-    this.type = type;
-    this.name = name;
+  public BarrierRequest(UUID uuid) {
+    this.uuid = uuid;
   }
 
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
+  public UUID getUuid() {
+    return uuid;
   }
-
-  @Override
-  public String type() {
-    return type;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
-  }
-  
 }

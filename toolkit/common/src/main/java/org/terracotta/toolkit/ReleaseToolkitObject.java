@@ -15,8 +15,6 @@
  */
 package org.terracotta.toolkit;
 
-import java.nio.ByteBuffer;
-
 /**
  *
  */

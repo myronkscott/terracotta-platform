@@ -75,31 +75,31 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     release(object.getType(), object.getName());
   }
   
-  private ToolkitObject createType(Class type, String name) {
+  private <T extends ToolkitObject,C> T createType(Class<T> type, String name, C config) {
     if (type == Barrier.class) {
-      return new TerracottaBarrier(this, endpoint, type.getName(), name);
+      return type.cast(new TerracottaBarrier(this, endpoint, type.getName(), name, (BarrierConfig)config));
     }
     return null;
   }
   
-  private synchronized Object acquire(Class type, String name, boolean create) {
+  private synchronized <T extends ToolkitObject,C> T acquire(Class<T> type, String name, C create) {
     cleanup();
     try {
       String tname = buildName(type.getName(), name);
       ToolkitObject delegate = null;
       while (delegate == null) {
-        delegate = createType(type, name);
+        delegate = createType(type, name, create);
         ToolkitReference placed = references.putIfAbsent(tname, new ToolkitReference(delegate));
         if (placed != null) {
           delegate = placed.get();
         } else {
-          ToolkitResponse resp = (create) ?                   
+          ToolkitResponse resp = (create != null) ?                   
                   endpoint.beginInvoke().message(new CreateToolkitObject(type.getName(), name)).invoke().get()
           :
                   endpoint.beginInvoke().message(new GetToolkitObject(type.getName(), name)).invoke().get();
           switch (resp.result()) {
             case SUCCESS:
-              return delegate;
+              return type.cast(delegate);
             case FAIL:
               throw new RuntimeException();
           }
@@ -115,17 +115,17 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     return null;
   }
   
-  private <T> T getToolkitObject(Class<T> type, String name) {
+  private <T extends ToolkitObject> T getToolkitObject(Class<T> type, String name) {
     return type.cast(acquire(type, name, false));
   }
   
-  private <T> T createToolkitObject(Class<T> type, String name) {
-    return type.cast(acquire(type, name, true));
+  private <T extends ToolkitObject, C> T createToolkitObject(Class<T> type, String name, C config) {
+    return type.cast(acquire(type, name, config));
   }
 
   @Override
   public Barrier createBarrier(String name, BarrierConfig parties) throws ToolkitObjectExists {
-    return createToolkitObject(Barrier.class, name);
+    return createToolkitObject(Barrier.class, name, parties);
   }
 
   @Override

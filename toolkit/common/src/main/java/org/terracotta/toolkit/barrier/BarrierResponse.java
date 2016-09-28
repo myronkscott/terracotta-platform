@@ -13,39 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terracotta.toolkit;
+package org.terracotta.toolkit.barrier;
+
+import org.terracotta.entity.EntityResponse;
 
 /**
  *
  */
-public class CreateToolkitObject implements ToolkitMessage {
-  private final String type;
-  private final String name;
-  private final byte[] payload = new byte[0];
+public class BarrierResponse implements EntityResponse {
+  private final long generation;
+  private final int waitCount;
 
-  public CreateToolkitObject(String type, String name) {
-    this.type = type;
-    this.name = name;
+  public BarrierResponse(long generation,int wait) {
+    this.generation = generation;
+    this.waitCount = wait;
   }
 
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.CREATE;
+  public long getGeneration() {
+    return generation;
   }
 
-  @Override
-  public String type() {
-    return type;
+  public int getWaitCount() {
+    return waitCount;
   }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
-  }
+  
   
 }

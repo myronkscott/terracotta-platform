@@ -39,7 +39,7 @@ public class ToolkitTest implements ICommonTest {
     }
     EntityRef<Toolkit, ToolkitConfig> ref = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
     Toolkit toolkit = ref.fetchEntity();
-    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
     Assert.assertNotNull(b);
     b.close();
     try {
@@ -48,7 +48,7 @@ public class ToolkitTest implements ICommonTest {
     } catch (Exception exp) {
       // expected;
     }
-    b = toolkit.createBarrier("my-barrier", new BarrierConfig());
+    b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
     Assert.assertNotNull(b);
   }
 }

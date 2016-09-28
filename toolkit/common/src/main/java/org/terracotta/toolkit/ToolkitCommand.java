@@ -19,5 +19,5 @@ package org.terracotta.toolkit;
  *
  */
 public enum ToolkitCommand {
-  CREATE, GET, RELEASE
+  CREATE, GET, RELEASE, OPERATION
 }

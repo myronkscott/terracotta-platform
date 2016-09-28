@@ -94,6 +94,11 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
       public ToolkitResult result() {
         return ToolkitResult.SUCCESS;
       }
+
+      @Override
+      public byte[] payload() {
+        return new byte[0];
+      }
     };
   }
   
@@ -103,6 +108,12 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
       public ToolkitResult result() {
         return ToolkitResult.FAIL;
       }
+      
+
+      @Override
+      public byte[] payload() {
+        return new byte[0];
+      }      
     };
   }
   
