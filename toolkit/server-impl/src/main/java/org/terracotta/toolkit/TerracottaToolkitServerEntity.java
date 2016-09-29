@@ -20,6 +20,7 @@ import java.util.Map;
 import org.terracotta.entity.ActiveServerEntity;
 import org.terracotta.entity.ClientCommunicator;
 import org.terracotta.entity.ClientDescriptor;
+import org.terracotta.entity.MessageCodecException;
 import org.terracotta.entity.PassiveSynchronizationChannel;
 import org.terracotta.runnel.Struct;
 import org.terracotta.runnel.StructBuilder;
@@ -54,8 +55,24 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
         return referenceToolkitObject(cd, m);
       case RELEASE:
         return dropToolkitObject(cd, m);
+      case OPERATION:
+        return runOperation(cd, m);
       default:
         throw new RuntimeException();
+    }
+  }
+  
+  private ToolkitResponse runOperation(ClientDescriptor cd, ToolkitMessage m) {
+    String name = buildName(m);
+    ServerHandler handler = objectSpace.get(name);
+    if (handler == null) {
+      return fail();
+    } else {
+      try {
+        return handler.handleMessage(cd, m.payload());
+      } catch (MessageCodecException codec) {
+        return fail();
+      }
     }
   }
   

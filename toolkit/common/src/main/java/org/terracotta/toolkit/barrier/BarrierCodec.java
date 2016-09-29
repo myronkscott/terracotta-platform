@@ -34,9 +34,9 @@ public class BarrierCodec implements MessageCodec<BarrierRequest, BarrierRespons
           .build();    
   
   private static final Struct BARRIER_RESPONSE = StructBuilder.newStructBuilder()
-          .int64("generation", 1)
-          .int32("waitCount", 2)
-          .int32("generationOnly", 3)
+          .int32("generationOnly", 1)
+          .int64("generation", 2)
+          .int32("waitCount", 3)
           .build(); 
     
   public BarrierCodec() {
@@ -62,9 +62,10 @@ public class BarrierCodec implements MessageCodec<BarrierRequest, BarrierRespons
   @Override
   public byte[] encodeResponse(BarrierResponse r) throws MessageCodecException {
     ByteBuffer buffer = BARRIER_RESPONSE.encoder()
+            .int32("generationOnly", r.isGenerationOnly()?1:0)
             .int64("generation", r.getGeneration())
             .int32("waitCount", r.getWaitCount())
-            .int32("qenerationOnly", r.isGenerationOnly()?1:0).encode();
+            .encode();
     byte[] data = new byte[buffer.flip().remaining()];
     buffer.get(data);
     return data;

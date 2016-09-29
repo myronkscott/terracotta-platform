@@ -60,7 +60,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
   private static final Struct RECONNECT_DATA = StructBuilder.newStructBuilder()
           .string("type", 1)
           .string("name", 2)
-          .string("payload", 3).build();
+          .byteBuffer("payload", 3).build();
   
   private static final Struct RECONNECT_COLLECTION = StructBuilder.newStructBuilder()
           .structs("targets", 1, RECONNECT_DATA).build();
@@ -111,7 +111,10 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
   @Override
   public byte[] encodeResponse(ToolkitResponse r) throws MessageCodecException {
     ByteBuffer buf = TOOLKIT_RESPONSE.encoder()
+            .string("type", r.type())
+            .string("name", r.name())
             .enm("result", r.result())
+            .byteBuffer("payload", ByteBuffer.wrap(r.payload()))
             .encode();
     byte[] send = new byte[buf.flip().remaining()];
     buf.get(send);
@@ -129,17 +132,20 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
 
       @Override
       public byte[] payload() {
-        return TOOLKIT_RESPONSE.decoder(buffer).enm("payload");
+        ByteBuffer data = TOOLKIT_RESPONSE.decoder(buffer).byteBuffer("payload");
+        byte[] payload = new byte[data.remaining()];
+        data.get(payload);
+        return payload;
       }
 
       @Override
       public String type() {
-        return TOOLKIT_RESPONSE.decoder(buffer).enm("type");
+        return TOOLKIT_RESPONSE.decoder(buffer).string("type");
       }
 
       @Override
       public String name() {
-        return TOOLKIT_RESPONSE.decoder(buffer).enm("name");
+        return TOOLKIT_RESPONSE.decoder(buffer).string("name");
       }
     };
   }

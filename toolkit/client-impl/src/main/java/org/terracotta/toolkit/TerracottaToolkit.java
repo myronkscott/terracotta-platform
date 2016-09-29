@@ -89,8 +89,11 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
       String tname = buildName(type.getName(), name);
       ToolkitObject delegate = null;
       while (delegate == null) {
-        delegate = createType(type, name, create);
-        ToolkitReference placed = references.putIfAbsent(tname, new ToolkitReference(delegate));
+        ToolkitReference placed = references.get(tname);
+        if (create != null) {
+          delegate = createType(type, name, create);
+          placed = references.putIfAbsent(tname, new ToolkitReference(delegate));
+        }
         if (placed != null) {
           delegate = placed.get();
         } else {
@@ -102,7 +105,7 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
             case SUCCESS:
               return type.cast(delegate);
             case FAIL:
-              throw new RuntimeException();
+              return null;
           }
         }
       }
