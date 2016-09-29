@@ -29,19 +29,17 @@ import org.terracotta.entity.MessageCodecException;
  */
 public class BarrierServerHandler extends ServerHandler {
   
-  private final BarrierConfig config;
   private final ClientCommunicator communicator;
 
   private long generation;
   private final int parties;
   private final Map<UUID, ClientDescriptor> mapper = new ConcurrentHashMap<>();
-  private final BarrierCodec codec = new BarrierCodec();
+  private final static BarrierCodec codec = new BarrierCodec();
   
   private volatile boolean reconnectBarrier = false;
 
   public BarrierServerHandler(String type, String name, BarrierConfig config, ClientCommunicator communicator, ClientDescriptor creator) {
     super(type, name, creator);
-    this.config = config;
     this.communicator = communicator;
     this.parties = config.parties();
   }
@@ -133,8 +131,6 @@ public class BarrierServerHandler extends ServerHandler {
       public String name() {
         return getName();
       }
-      
-      
     };
   }
 }

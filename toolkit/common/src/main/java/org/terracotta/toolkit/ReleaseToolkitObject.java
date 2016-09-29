@@ -18,34 +18,9 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public class ReleaseToolkitObject implements ToolkitMessage {
-  private final String type;
-  private final String name;
-  private final byte[] payload = new byte[0];
+public class ReleaseToolkitObject extends BaseToolkitMessage {
 
   public ReleaseToolkitObject(String type, String name) {
-    this.type = type;
-    this.name = name;
+    super(ToolkitCommand.RELEASE, type, name, new byte[0]);
   }
-
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.RELEASE;
-  }
-
-  @Override
-  public String type() {
-    return type;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
-  }
-  
 }

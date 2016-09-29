@@ -170,7 +170,7 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
     return send;
   }
   
-  public Collection<ToolkitReconnectData> decodeReconnectData(byte[] data) {
+  public static Collection<ToolkitReconnectData> decodeReconnectData(byte[] data) {
     StructArrayDecoder collection = RECONNECT_COLLECTION.decoder(ByteBuffer.wrap(data)).structs("targets");
     int size = collection.length();
     ToolkitReconnectData[] vals = new ToolkitReconnectData[size];

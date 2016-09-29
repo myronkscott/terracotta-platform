@@ -15,24 +15,23 @@
  */
 package org.terracotta.toolkit;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.terracotta.entity.ActiveServerEntity;
 import org.terracotta.entity.ClientCommunicator;
 import org.terracotta.entity.ClientDescriptor;
 import org.terracotta.entity.MessageCodecException;
 import org.terracotta.entity.PassiveSynchronizationChannel;
-import org.terracotta.runnel.Struct;
-import org.terracotta.runnel.StructBuilder;
 import org.terracotta.toolkit.barrier.BarrierConfig;
 import org.terracotta.toolkit.barrier.BarrierServerHandler;
 
 
 public class TerracottaToolkitServerEntity implements ActiveServerEntity<ToolkitMessage, ToolkitResponse> {
-  private final Map<String, ServerHandler> objectSpace = new HashMap<>();
+  private final Map<String, ServerHandler> objectSpace = new ConcurrentHashMap<>();
   private final ClientCommunicator communicator;
 
-  public TerracottaToolkitServerEntity(ClientCommunicator communicator) {
+  public TerracottaToolkitServerEntity(ClientCommunicator communicator, byte[] config) {
     this.communicator = communicator;
   }
   
@@ -43,7 +42,11 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
 
   @Override
   public void disconnected(ClientDescriptor cd) {
-
+    for (Map.Entry<String, ServerHandler> handler : objectSpace.entrySet()) {
+      if (handler.getValue().dereference(cd) == 0) {
+        objectSpace.remove(handler.getKey());
+      }
+    }
   }
 
   @Override
@@ -112,7 +115,7 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
   }
   
   private ServerHandler translate(String type, String name, ClientDescriptor descriptor, ToolkitMessage m) {
-    if (m.type().equals("org.terracotta.toolkit.barrier.Barrier")) {
+    if (m.type().equals(ToolkitConstants.BARRIER_TYPE)) {
       return new BarrierServerHandler(type, name, new BarrierConfig(m.payload()), communicator, descriptor);
     }
     return null;
@@ -169,12 +172,26 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
   }
   
   private static String buildName(ToolkitMessage m) {
-    return m.type() + ":" + m.name();
+    return buildName(m.type(), m.name());
+  }
+  
+  private static String buildName(String type, String name) {
+    return type + ":" + name;
   }
 
   @Override
   public void handleReconnect(ClientDescriptor cd, byte[] bytes) {
-
+    Collection<ToolkitReconnectData> reconnect = ToolkitCodec.decodeReconnectData(bytes);
+    for (ToolkitReconnectData trd : reconnect) {
+      ServerHandler handler = objectSpace.get(buildName(trd.getType(), trd.getName()));
+      if (handler != null) {
+        try {
+          handler.handleReconnect(cd, trd.getPayload());
+        } catch (MessageCodecException codec) {
+          throw new RuntimeException(codec);
+        }
+      }
+    }
   }
 
   @Override

@@ -16,6 +16,8 @@
 package org.terracotta.toolkit;
 
 import com.tc.classloader.PermanentEntity;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.terracotta.entity.ActiveServerEntity;
 import org.terracotta.entity.BasicServiceConfiguration;
 import org.terracotta.entity.ClientCommunicator;
@@ -44,8 +46,8 @@ public class TerracottaToolkitEntityServerService implements EntityServerService
   }
 
   @Override
-  public ActiveServerEntity<ToolkitMessage, ToolkitResponse> createActiveEntity(ServiceRegistry sr, byte[] bytes) {
-    return new TerracottaToolkitServerEntity(sr.getService(new BasicServiceConfiguration<>(ClientCommunicator.class)));
+  public ActiveServerEntity<ToolkitMessage, ToolkitResponse> createActiveEntity(ServiceRegistry sr, byte[] bytes) {    
+    return new TerracottaToolkitServerEntity(sr.getService(new BasicServiceConfiguration<>(ClientCommunicator.class)), bytes);
   }
 
   @Override
@@ -55,7 +57,7 @@ public class TerracottaToolkitEntityServerService implements EntityServerService
 
   @Override
   public ConcurrencyStrategy<ToolkitMessage> getConcurrencyStrategy(byte[] bytes) {
-   return new ToolkitConcurrency();
+   return new ToolkitConcurrency(bytes);
   }
 
   @Override

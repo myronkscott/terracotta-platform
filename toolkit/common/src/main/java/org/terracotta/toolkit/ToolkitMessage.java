@@ -16,6 +16,9 @@
 package org.terracotta.toolkit;
 
 import org.terracotta.entity.EntityMessage;
+import org.terracotta.entity.EntityResponse;
+import org.terracotta.entity.MessageCodec;
+import org.terracotta.entity.MessageCodecException;
 
 /**
  *
@@ -25,4 +28,5 @@ public interface ToolkitMessage extends EntityMessage {
   String type();
   String name();
   byte[] payload();
+  <T extends EntityMessage, R extends EntityResponse> T payload(MessageCodec<T, R> codec) throws MessageCodecException;
 }

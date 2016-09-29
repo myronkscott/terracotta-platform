@@ -76,6 +76,4 @@ public class BarrierCodec implements MessageCodec<BarrierRequest, BarrierRespons
     StructDecoder decode = BARRIER_RESPONSE.decoder(ByteBuffer.wrap(bytes));
     return new BarrierResponse(decode.int32("generationOnly") == 1, decode.int64("generation"), decode.int32("waitCount"));
   }
-
-
 }

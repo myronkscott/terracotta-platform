@@ -18,34 +18,9 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public class GetToolkitObject implements ToolkitMessage {
-  private final String type;
-  private final String name;
-  private final byte[] payload = new byte[0];
+public class GetToolkitObject extends BaseToolkitMessage {
 
   public GetToolkitObject(String type, String name) {
-    this.type = type;
-    this.name = name;
+    super(ToolkitCommand.GET, type, name, new byte[0]);
   }
-
-  @Override
-  public ToolkitCommand command() {
-    return ToolkitCommand.GET;
-  }
-
-  @Override
-  public String type() {
-    return type;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public byte[] payload() {
-    return payload;
-  }
-  
 }

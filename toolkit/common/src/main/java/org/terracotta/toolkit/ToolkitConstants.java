@@ -20,4 +20,5 @@ package org.terracotta.toolkit;
 public class ToolkitConstants {
   public static final String STANDARD_TOOLKIT = "standardToolkit";
   public static final String TOOLKIT_TYPE = "org.terracotta.toolkit.Toolkit";
+  public static final String BARRIER_TYPE = "org.terracotta.toolkit.barrier.Barrier";
 }

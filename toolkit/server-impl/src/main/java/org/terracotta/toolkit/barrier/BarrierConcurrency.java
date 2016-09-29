@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.terracotta.toolkit;
+package org.terracotta.toolkit.barrier;
+
+import org.terracotta.toolkit.ConcurrencyHelper;
 
 /**
  *
  */
-public class CreateToolkitObject extends BaseToolkitMessage {
+public class BarrierConcurrency implements ConcurrencyHelper {
 
-  public CreateToolkitObject(String type, String name, byte[] payload) {
-    super(ToolkitCommand.CREATE, type, name, payload);
+  @Override
+  public int concurrencyKey(String name, byte[] m, int min, int max) {
+//  everyting is serialized, just hash the name
+    int val = name.hashCode() % max;
+    if (val < min) {
+      val = min;
+    }
+    return val;
   }
+  
 }

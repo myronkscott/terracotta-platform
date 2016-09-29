@@ -18,9 +18,8 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public class CreateToolkitObject extends BaseToolkitMessage {
+public interface ConcurrencyHelper {
+  
+  int concurrencyKey(String name, byte[] m, int min, int max);
 
-  public CreateToolkitObject(String type, String name, byte[] payload) {
-    super(ToolkitCommand.CREATE, type, name, payload);
-  }
 }
