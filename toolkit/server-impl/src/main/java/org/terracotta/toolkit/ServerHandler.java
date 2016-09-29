@@ -18,6 +18,7 @@ package org.terracotta.toolkit;
 import java.util.HashSet;
 import java.util.Set;
 import org.terracotta.entity.ClientDescriptor;
+import org.terracotta.entity.MessageCodecException;
 
 /**
  *
@@ -27,13 +28,18 @@ public abstract class ServerHandler {
   private int referenceCount = 1;
   private final ClientDescriptor creator;
   private final Set<ClientDescriptor> refers = new HashSet<>();
+  private final String type;
+  private final String name;
 
-  public ServerHandler(ClientDescriptor creator) {
+  public ServerHandler(String type, String name, ClientDescriptor creator) {
     this.creator = creator;
+    this.type = type;
+    this.name = name;
     refers.add(creator);
   }
   
-  abstract ToolkitResponse handleMessage(byte[] raw);
+  public abstract ToolkitResponse handleMessage(ClientDescriptor creator, byte[] raw) throws MessageCodecException;
+  public abstract void handleReconnect(ClientDescriptor creator, byte[] raw) throws MessageCodecException;
   
   public int reference(ClientDescriptor ref) {
     if (refers.add(ref)) {
@@ -53,5 +59,13 @@ public abstract class ServerHandler {
       throw new AssertionError("refcount != set " + referenceCount + " " + refers.size());
     }
     return referenceCount;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public String getName() {
+    return name;
   }
 }

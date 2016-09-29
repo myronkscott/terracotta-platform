@@ -21,4 +21,7 @@ package org.terracotta.toolkit;
 public interface ToolkitObject extends AutoCloseable {
   String getName();
   String getType();
+  byte[] createReconnectData();
+  void handleServerMessage(ToolkitResponse data);
+  void didDisconnectUnexpectedly();
 }

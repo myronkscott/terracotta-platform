@@ -23,10 +23,12 @@ import org.terracotta.entity.EntityResponse;
 public class BarrierResponse implements EntityResponse {
   private final long generation;
   private final int waitCount;
+  public final boolean generationOnly;
 
-  public BarrierResponse(long generation,int wait) {
+  public BarrierResponse(boolean generationOnly, long generation, int waitCount) {
+    this.generationOnly = generationOnly;
     this.generation = generation;
-    this.waitCount = wait;
+    this.waitCount = waitCount;
   }
 
   public long getGeneration() {
@@ -37,5 +39,7 @@ public class BarrierResponse implements EntityResponse {
     return waitCount;
   }
   
-  
+  public boolean isGenerationOnly() {
+    return generationOnly;
+  }
 }

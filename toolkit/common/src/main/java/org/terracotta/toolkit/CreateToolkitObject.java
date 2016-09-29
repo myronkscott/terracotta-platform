@@ -21,11 +21,12 @@ package org.terracotta.toolkit;
 public class CreateToolkitObject implements ToolkitMessage {
   private final String type;
   private final String name;
-  private final byte[] payload = new byte[0];
+  private final byte[] payload;
 
-  public CreateToolkitObject(String type, String name) {
+  public CreateToolkitObject(String type, String name, byte[] payload) {
     this.type = type;
     this.name = name;
+    this.payload = payload;
   }
 
   @Override

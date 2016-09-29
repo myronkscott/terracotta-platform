@@ -54,6 +54,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.terracotta</groupId>
+      <artifactId>toolkit-common</artifactId>
+      <scope>provided</scope>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>

@@ -17,6 +17,7 @@ package org.terracotta.toolkit;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +95,7 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
           delegate = placed.get();
         } else {
           ToolkitResponse resp = (create != null) ?                   
-                  endpoint.beginInvoke().message(new CreateToolkitObject(type.getName(), name)).invoke().get()
+                  endpoint.beginInvoke().message(new CreateToolkitObject(type.getName(), name, ((BarrierConfig)create).toRaw())).invoke().get()
           :
                   endpoint.beginInvoke().message(new GetToolkitObject(type.getName(), name)).invoke().get();
           switch (resp.result()) {
@@ -105,6 +106,7 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
           }
         }
       }
+      return type.cast(delegate);
     } catch (EntityException ee) {
       throw new RuntimeException(ee);
     } catch (InterruptedException ie) {
@@ -112,11 +114,10 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
     } catch (MessageCodecException me) {
       throw new RuntimeException(me);
     }
-    return null;
   }
   
   private <T extends ToolkitObject> T getToolkitObject(Class<T> type, String name) {
-    return type.cast(acquire(type, name, false));
+    return type.cast(acquire(type, name, null));
   }
   
   private <T extends ToolkitObject, C> T createToolkitObject(Class<T> type, String name, C config) {
@@ -180,17 +181,34 @@ public class TerracottaToolkit implements Toolkit, EndpointDelegate {
 
   @Override
   public void handleMessage(EntityResponse er) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    ToolkitResponse response = (ToolkitResponse)er;
+    ToolkitReference ref = references.get(buildName(response.type(), response.name()));
+    ToolkitObject object = (ref != null) ? ref.get() : null;
+    if (object != null) {
+      object.handleServerMessage(response);
+    }
   }
 
   @Override
   public byte[] createExtendedReconnectData() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    List<ToolkitReconnectData> list = new ArrayList<ToolkitReconnectData>();
+    for (ToolkitReference refs :references.values()) {
+      ToolkitObject object = refs.get();
+      if (object != null) {
+        list.add(new ToolkitReconnectData(object.getType(), object.getName(), object.createReconnectData()));
+      }
+    }
+    return ToolkitCodec.encodeReconnectData(list);
   }
 
   @Override
   public void didDisconnectUnexpectedly() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    for (ToolkitReference refs :references.values()) {
+      ToolkitObject object = refs.get();
+      if (object != null) {
+        object.didDisconnectUnexpectedly();
+      }
+    }
   }
 
   private class ToolkitReference extends WeakReference<ToolkitObject> {

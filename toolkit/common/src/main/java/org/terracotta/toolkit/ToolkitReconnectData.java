@@ -18,6 +18,28 @@ package org.terracotta.toolkit;
 /**
  *
  */
-public enum ToolkitResult {
-  SUCCESS, FAIL
+public class ToolkitReconnectData {
+  private final String type;
+  private final String name;
+  private final byte[] payload;
+
+  public ToolkitReconnectData(String type, String name, byte[] payload) {
+    this.type = type;
+    this.name = name;
+    this.payload = payload;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public byte[] getPayload() {
+    return payload;
+  }
+  
+  
 }

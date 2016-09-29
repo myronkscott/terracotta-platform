@@ -37,7 +37,7 @@ public class ToolkitGalvanTest extends KitTestBasic {
 
   @Override
   public int getClientsToStart() {
-    return 1;
+    return 2;
   }
 
   @Override

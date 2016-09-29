@@ -18,7 +18,20 @@ import org.terracotta.toolkit.barrier.BarrierConfig;
 public class ToolkitTest implements ICommonTest {
   @Override
   public void runSetup(IClientTestEnvironment env, IClusterControl control) throws Throwable {
-
+    URI uri = URI.create(env.getClusterUri());
+    Connection connection = null;
+    try {
+      Properties emptyProperties = new Properties();
+      connection = ConnectionFactory.connect(uri, emptyProperties);
+    } catch (ConnectionException e) {
+      org.terracotta.testing.common.Assert.unexpected(e);
+    }
+    EntityRef<Toolkit, ToolkitConfig> ref = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
+    Toolkit toolkit = ref.fetchEntity();
+    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig(2));
+    Assert.assertNotNull(b);
+    b.close();
+    connection.close();
   }
   
   @Override
@@ -39,16 +52,11 @@ public class ToolkitTest implements ICommonTest {
     }
     EntityRef<Toolkit, ToolkitConfig> ref = connection.getEntityRef(Toolkit.class, Toolkit.VERSION, ToolkitConstants.STANDARD_TOOLKIT);
     Toolkit toolkit = ref.fetchEntity();
-    Barrier b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
+    Barrier b = toolkit.getBarrier("my-barrier");
     Assert.assertNotNull(b);
-    b.close();
-    try {
-      b.await();
-      Assert.fail();
-    } catch (Exception exp) {
-      // expected;
-    }
-    b = toolkit.createBarrier("my-barrier", new BarrierConfig(1));
-    Assert.assertNotNull(b);
+    System.out.println("parties:" + b.getParties());
+    int id = b.await();
+    System.out.println("id:" + id);
+    connection.close();
   }
 }

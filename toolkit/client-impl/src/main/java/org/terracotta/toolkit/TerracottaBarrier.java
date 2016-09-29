@@ -15,13 +15,16 @@
  */
 package org.terracotta.toolkit;
 
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.terracotta.entity.EndpointDelegate;
 import org.terracotta.entity.EntityClientEndpoint;
+import org.terracotta.entity.EntityResponse;
 import org.terracotta.entity.InvokeFuture;
 import org.terracotta.entity.MessageCodecException;
 import org.terracotta.exception.EntityException;
@@ -56,7 +59,7 @@ public class TerracottaBarrier implements Barrier {
     this.parties = parties.parties();
     this.opTar = new OperationTarget<BarrierRequest, BarrierResponse>(type, name, new BarrierCodec());
   }
-
+  
   @Override
   public String getType() {
     return this.type;
@@ -137,4 +140,44 @@ public class TerracottaBarrier implements Barrier {
       lock.unlock();
     }
   }
+  
+  @Override
+  public void handleServerMessage(ToolkitResponse fromServer) {
+    try {
+      // We are expecting to get a generation update.
+      long newGeneration = opTar.process(fromServer).getGeneration();
+      if (-1 == newGeneration) {
+        throw new IllegalStateException("broken barrier");
+      }
+      if (newGeneration > 0 && newGeneration < generation) {
+        throw new IllegalStateException("Generation went back in time.");
+      }
+      generation = newGeneration;
+      notifyAll();
+    } catch (MessageCodecException codec) {
+      throw new RuntimeException(codec);
+    }
+  }
+
+  @Override
+  public byte[] createReconnectData() {
+    // We want to send our generation so that the server-side knows where it should start counting.
+    if (!waitTokens.isEmpty()) {
+// let the server know that this client is waiting with a specific token.  The server may already know about this token so the token 
+// signifies a specific wait
+      ByteBuffer payload = ByteBuffer.allocate(16 * waitTokens.size() + 8);
+      for (UUID wait : waitTokens) {
+        payload.putLong(wait.getLeastSignificantBits()).putLong(wait.getMostSignificantBits());
+      }
+      return payload.putLong(generation).array();
+    } else {
+//  not waiting, just tell the server about generation
+      return ByteBuffer.allocate(8).putLong(generation).array();
+    }
+  }
+
+  @Override
+  public void didDisconnectUnexpectedly() {
+
+  }    
 }

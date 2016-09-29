@@ -18,12 +18,23 @@ package org.terracotta.toolkit;
 import java.util.HashMap;
 import java.util.Map;
 import org.terracotta.entity.ActiveServerEntity;
+import org.terracotta.entity.ClientCommunicator;
 import org.terracotta.entity.ClientDescriptor;
 import org.terracotta.entity.PassiveSynchronizationChannel;
+import org.terracotta.runnel.Struct;
+import org.terracotta.runnel.StructBuilder;
+import org.terracotta.toolkit.barrier.BarrierConfig;
+import org.terracotta.toolkit.barrier.BarrierServerHandler;
 
 
 public class TerracottaToolkitServerEntity implements ActiveServerEntity<ToolkitMessage, ToolkitResponse> {
   private final Map<String, ServerHandler> objectSpace = new HashMap<>();
+  private final ClientCommunicator communicator;
+
+  public TerracottaToolkitServerEntity(ClientCommunicator communicator) {
+    this.communicator = communicator;
+  }
+  
   @Override
   public void connected(ClientDescriptor cd) {
 
@@ -75,17 +86,19 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
   
   private ToolkitResponse createToolkitObject(ClientDescriptor cd, ToolkitMessage m) {
     String name = buildName(m);
-    ServerHandler handler = objectSpace.putIfAbsent(name, new ServerHandler(cd) {
-      @Override
-      ToolkitResponse handleMessage(byte[] raw) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-      }
-    });
+    ServerHandler handler = objectSpace.putIfAbsent(name, translate(m.type(), m.name(), cd, m));
     if (handler != null) {
       return fail();
     } else {
       return success();
     }
+  }
+  
+  private ServerHandler translate(String type, String name, ClientDescriptor descriptor, ToolkitMessage m) {
+    if (m.type().equals("org.terracotta.toolkit.barrier.Barrier")) {
+      return new BarrierServerHandler(type, name, new BarrierConfig(m.payload()), communicator, descriptor);
+    }
+    return null;
   }
 
   private static ToolkitResponse success() {
@@ -98,6 +111,16 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
       @Override
       public byte[] payload() {
         return new byte[0];
+      }
+
+      @Override
+      public String type() {
+        return "";
+      }
+
+      @Override
+      public String name() {
+        return "";
       }
     };
   }
@@ -113,6 +136,17 @@ public class TerracottaToolkitServerEntity implements ActiveServerEntity<Toolkit
       @Override
       public byte[] payload() {
         return new byte[0];
+      }   
+      
+
+      @Override
+      public String type() {
+        return "";
+      }
+
+      @Override
+      public String name() {
+        return "";
       }      
     };
   }

@@ -15,17 +15,34 @@
  */
 package org.terracotta.toolkit.barrier;
 
+import java.nio.ByteBuffer;
+import org.terracotta.runnel.Struct;
+import org.terracotta.runnel.StructBuilder;
+
 /**
  *
  */
 public class BarrierConfig {
   private final int parties;
+  
+  private static Struct CONFIG = StructBuilder.newStructBuilder().int32("parties", 1).build();
 
+  public BarrierConfig(byte[] raw) {
+    parties = CONFIG.decoder(ByteBuffer.wrap(raw)).int32("parties");
+  }
+  
   public BarrierConfig(int parties) {
     this.parties = parties;
   }
   
   public int parties() {
     return parties;
+  }
+  
+  public byte[] toRaw() {
+    ByteBuffer buffer = CONFIG.encoder().int32("parties", parties).encode();
+    byte[] raw = new byte[buffer.flip().remaining()];
+    buffer.get(raw);
+    return raw;
   }
 }

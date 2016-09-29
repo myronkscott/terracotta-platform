@@ -17,13 +17,18 @@ package org.terracotta.toolkit;
 
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import org.terracotta.entity.MessageCodec;
 import org.terracotta.entity.MessageCodecException;
 import org.terracotta.runnel.EnumMapping;
 import org.terracotta.runnel.EnumMappingBuilder;
 import org.terracotta.runnel.Struct;
 import org.terracotta.runnel.StructBuilder;
+import org.terracotta.runnel.decoding.StructArrayDecoder;
 import org.terracotta.runnel.decoding.StructDecoder;
+import org.terracotta.runnel.encoding.StructArrayEncoder;
 
 
 public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitResponse> {
@@ -46,10 +51,21 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
           .mapping(ToolkitResult.FAIL, 2).build();
   
   private static final Struct TOOLKIT_RESPONSE = StructBuilder.newStructBuilder()
-          .enm("result", 1, TOOLKIT_RESULTS)
-          .byteBuffer("payload", 2)
+          .string("type", 1)
+          .string("name", 2)
+          .enm("result", 3, TOOLKIT_RESULTS)
+          .byteBuffer("payload", 4)
           .build();
 
+  private static final Struct RECONNECT_DATA = StructBuilder.newStructBuilder()
+          .string("type", 1)
+          .string("name", 2)
+          .string("payload", 3).build();
+  
+  private static final Struct RECONNECT_COLLECTION = StructBuilder.newStructBuilder()
+          .structs("targets", 1, RECONNECT_DATA).build();
+
+  
   @Override
   public byte[] encodeMessage(ToolkitMessage m) throws MessageCodecException {
     ByteBuffer buffer = TOOLKIT_STRUCT.encoder().enm("cmd", m.command())
@@ -75,14 +91,18 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
     switch (cmd) {
       case GET:
         return new GetToolkitObject(type, name);
-      case CREATE:
-        return new CreateToolkitObject(type, name);
+      case CREATE: {
+        byte[] data = new byte[payload.remaining()];
+        payload.get(data);
+        return new CreateToolkitObject(type, name, data);
+      }
       case RELEASE:
         return new ReleaseToolkitObject(type, name);
-      case OPERATION:
+      case OPERATION: {
         byte[] data = new byte[payload.remaining()];
         payload.get(data);
         return new ToolkitOperation(type, name, data);
+      }
       default:
         throw new IllegalArgumentException(cmd + " " + type + " " + name);
     }
@@ -111,7 +131,53 @@ public class ToolkitCodec implements MessageCodec<ToolkitMessage, ToolkitRespons
       public byte[] payload() {
         return TOOLKIT_RESPONSE.decoder(buffer).enm("payload");
       }
+
+      @Override
+      public String type() {
+        return TOOLKIT_RESPONSE.decoder(buffer).enm("type");
+      }
+
+      @Override
+      public String name() {
+        return TOOLKIT_RESPONSE.decoder(buffer).enm("name");
+      }
     };
   }
   
+  public static byte[] encodeReconnectData(Collection<ToolkitReconnectData> data) {
+    StructArrayEncoder collection = RECONNECT_COLLECTION.encoder()
+      .structs("targets");
+    Iterator<ToolkitReconnectData> items = data.iterator();
+    while (items.hasNext()) {
+      ToolkitReconnectData in = items.next();
+      collection.next();
+      collection.string("type", in.getType())
+              .string("name",in.getName())
+              .byteBuffer("payload", ByteBuffer.wrap(in.getPayload()));
+//      if (items.hasNext()) {
+//        collection.next();
+//      }
+    }
+    ByteBuffer buffer = collection.end().encode();
+    byte[] send = new byte[buffer.flip().remaining()];
+    buffer.get(send);
+    return send;
+  }
+  
+  public Collection<ToolkitReconnectData> decodeReconnectData(byte[] data) {
+    StructArrayDecoder collection = RECONNECT_COLLECTION.decoder(ByteBuffer.wrap(data)).structs("targets");
+    int size = collection.length();
+    ToolkitReconnectData[] vals = new ToolkitReconnectData[size];
+    for (int x=0;x<size;x++) {
+      collection.next();
+      ByteBuffer pay = collection.byteBuffer("payload");
+      byte[] payload = new byte[pay.remaining()];
+      pay.get(payload);
+      vals[0] = new ToolkitReconnectData(collection.string("type"), collection.string("name"), payload);
+//      if (x < size - 1) {
+//        collection.next();
+//      }
+    }
+    return Arrays.asList(vals);
+  }
 }

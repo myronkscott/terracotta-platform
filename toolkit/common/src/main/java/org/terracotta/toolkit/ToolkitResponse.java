@@ -22,5 +22,7 @@ import org.terracotta.entity.EntityResponse;
  */
 public interface ToolkitResponse extends EntityResponse {
   ToolkitResult result();
+  String type();
+  String name();
   byte[] payload();
 }

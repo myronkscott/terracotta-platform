@@ -17,6 +17,8 @@ package org.terracotta.toolkit;
 
 import com.tc.classloader.PermanentEntity;
 import org.terracotta.entity.ActiveServerEntity;
+import org.terracotta.entity.BasicServiceConfiguration;
+import org.terracotta.entity.ClientCommunicator;
 import org.terracotta.entity.ConcurrencyStrategy;
 import org.terracotta.entity.EntityServerService;
 import org.terracotta.entity.MessageCodec;
@@ -43,7 +45,7 @@ public class TerracottaToolkitEntityServerService implements EntityServerService
 
   @Override
   public ActiveServerEntity<ToolkitMessage, ToolkitResponse> createActiveEntity(ServiceRegistry sr, byte[] bytes) {
-    return new TerracottaToolkitServerEntity();
+    return new TerracottaToolkitServerEntity(sr.getService(new BasicServiceConfiguration<>(ClientCommunicator.class)));
   }
 
   @Override
