@@ -54,8 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -68,9 +66,8 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class AbstractTest {
 
-  private final ExecutorService managementMessageExecutor = Executors.newCachedThreadPool();
   private final ObjectMapper mapper = new ObjectMapper();
-  private final PassthroughClusterControl stripeControl;
+  protected final PassthroughClusterControl stripeControl;
 
   private Connection managementConnection;
 
@@ -78,10 +75,15 @@ public abstract class AbstractTest {
   protected final Map<String, List<Cache>> caches = new HashMap<>();
   protected TmsAgentService tmsAgentService;
 
-  AbstractTest() {
+  protected AbstractTest() {
+    this(0);
+  }
+
+  protected AbstractTest(int nPassives) {
     mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     mapper.addMixIn(CapabilityContext.class, CapabilityContextMixin.class);
 
+    System.out.println("+ server1");
     PassthroughServer activeServer = new PassthroughServer();
     activeServer.setServerName("server1");
 
@@ -102,8 +104,27 @@ public abstract class AbstractTest {
     resources.getResource().add(resource);
     activeServer.registerExtendedConfiguration(new OffHeapResourcesProvider(resources));
 
-    stripeControl = new PassthroughClusterControl("stripe-1", activeServer);
+    PassthroughServer[] servers = new PassthroughServer[nPassives];
+    for (int i = 0; i < nPassives; i++) {
+      String serverName = "server" + (i + 2);
+      System.out.println("+ " + serverName);
+      servers[i] = new PassthroughServer();
+      servers[i].setServerName(serverName);
+    }
+
+    stripeControl = new PassthroughClusterControl("stripe-1", activeServer, servers);
+    try {
+      stripeControl.waitForActive();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    // only keep 1 active running by default
+    for (int i = 0; i < nPassives; i++) {
+      stripeControl.terminateOnePassive();
+    }
   }
+
 
   @Before
   public void setUp() throws Exception {
@@ -123,7 +144,6 @@ public abstract class AbstractTest {
       managementConnection.close();
     }
     stripeControl.tearDown();
-    managementMessageExecutor.shutdown();
   }
 
   protected JsonNode readJson(String file) {
