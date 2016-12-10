@@ -44,10 +44,10 @@ public class HAFeaturesTest extends AbstractHaTest {
 
     // read messages
     List<Message> messages = tmsAgentService.readMessages();
-    assertThat(messages.size(), equalTo(5));
+    assertThat(messages.size(), equalTo(6));
     assertThat(
-        IntStream.range(0, 5).mapToObj(i -> messages.get(i).getType()).collect(Collectors.toList()),
-        equalTo(Arrays.asList("NOTIFICATION", "NOTIFICATION", "NOTIFICATION", "NOTIFICATION", "TOPOLOGY")));
+        IntStream.range(0, 6).mapToObj(i -> messages.get(i).getType()).collect(Collectors.toList()),
+        equalTo(Arrays.asList("NOTIFICATION", "NOTIFICATION", "NOTIFICATION", "NOTIFICATION", "NOTIFICATION", "TOPOLOGY")));
 
     List<ContextualNotification> notifs = messages.stream()
         .filter(message -> message.getType().equals("NOTIFICATION"))
@@ -55,16 +55,16 @@ public class HAFeaturesTest extends AbstractHaTest {
         .collect(Collectors.toList());
 
     assertThat(
-        IntStream.range(0, 4).mapToObj(i -> notifs.get(i).getType()).collect(Collectors.toList()),
-        equalTo(Arrays.asList("SERVER_JOINED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED")));
+        IntStream.range(0, 5).mapToObj(i -> notifs.get(i).getType()).collect(Collectors.toList()),
+        equalTo(Arrays.asList("SERVER_JOINED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED", "SERVER_ENTITY_CREATED", "SERVER_STATE_CHANGED")));
 
-    assertThat(
-        IntStream.range(0, 4).mapToObj(i -> notifs.get(i).getContext().get(Server.NAME_KEY)).collect(Collectors.toList()),
-        equalTo(Arrays.asList("server2", "server2", "server2", "server2")));
-
-    assertThat(
-        IntStream.range(0, 4).mapToObj(i -> notifs.get(i).getContext().get(Server.NAME_KEY)).collect(Collectors.toList()),
-        equalTo(Arrays.asList("UNINITIALIZED", "SYNCHRONIZING", "ACTIVE")));
+//    assertThat(
+//        IntStream.range(0, 5).mapToObj(i -> notifs.get(i).getContext().get(Server.NAME_KEY)).collect(Collectors.toList()),
+//        equalTo(Arrays.asList("server2", "server2", "server2", "server2", "server2")));
+//  The state of the server is not in the context
+//    assertThat(
+//        IntStream.of(1, 2, 4).mapToObj(i -> notifs.get(i).getContext().get(Server.NAME_KEY)).collect(Collectors.toList()),
+//        equalTo(Arrays.asList("UNINITIALIZED", "SYNCHRONIZING", "PASSIVE")));
   }
 
   @Test
@@ -85,12 +85,12 @@ public class HAFeaturesTest extends AbstractHaTest {
     List<ContextualNotification> notifs = messages.stream()
         .filter(message -> message.getType().equals("NOTIFICATION"))
         .flatMap(message -> message.unwrap(ContextualNotification.class).stream())
-        .collect(Collectors.toList());
-    assertThat(notifs.size(), equalTo(4));
+        .collect(Collectors.toList());    
+    assertThat(notifs.size(), equalTo(5));
 
     assertThat(
-        IntStream.range(0, 4).mapToObj(i -> notifs.get(i).getType()).collect(Collectors.toList()),
-        equalTo(Arrays.asList("SERVER_JOINED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED")));
+        IntStream.range(0, 5).mapToObj(i -> notifs.get(i).getType()).collect(Collectors.toList()),
+        equalTo(Arrays.asList("SERVER_JOINED", "SERVER_STATE_CHANGED", "SERVER_STATE_CHANGED", "SERVER_ENTITY_CREATED", "SERVER_STATE_CHANGED")));
   }
 
 }

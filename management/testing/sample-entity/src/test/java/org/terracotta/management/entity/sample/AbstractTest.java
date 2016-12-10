@@ -83,9 +83,31 @@ public abstract class AbstractTest {
     mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     mapper.addMixIn(CapabilityContext.class, CapabilityContextMixin.class);
 
-    System.out.println("+ server1");
+    PassthroughServer activeServer = buildAServer("server1");
+
+    PassthroughServer[] servers = new PassthroughServer[nPassives];
+    for (int i = 0; i < nPassives; i++) {
+      String serverName = "server" + (i + 2);
+      servers[i] = buildAServer(serverName);
+    }
+
+    stripeControl = new PassthroughClusterControl("stripe-1", activeServer, servers);
+    try {
+      stripeControl.waitForActive();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    // only keep 1 active running by default
+    for (int i = 0; i < nPassives; i++) {
+      stripeControl.terminateOnePassive();
+    }
+  }
+  
+  private PassthroughServer buildAServer(String name) {
+    System.out.println("+ " + name);
     PassthroughServer activeServer = new PassthroughServer();
-    activeServer.setServerName("server1");
+    activeServer.setServerName(name);
 
     activeServer.registerClientEntityService(new CacheEntityClientService());
     activeServer.registerServerEntityService(new CacheEntityServerService());
@@ -103,26 +125,8 @@ public abstract class AbstractTest {
     resource.setValue(BigInteger.valueOf(32));
     resources.getResource().add(resource);
     activeServer.registerExtendedConfiguration(new OffHeapResourcesProvider(resources));
-
-    PassthroughServer[] servers = new PassthroughServer[nPassives];
-    for (int i = 0; i < nPassives; i++) {
-      String serverName = "server" + (i + 2);
-      System.out.println("+ " + serverName);
-      servers[i] = new PassthroughServer();
-      servers[i].setServerName(serverName);
-    }
-
-    stripeControl = new PassthroughClusterControl("stripe-1", activeServer, servers);
-    try {
-      stripeControl.waitForActive();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-    // only keep 1 active running by default
-    for (int i = 0; i < nPassives; i++) {
-      stripeControl.terminateOnePassive();
-    }
+    
+    return activeServer;
   }
 
 
