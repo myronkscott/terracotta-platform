@@ -40,9 +40,10 @@ public class HealthCheckerServer implements ActiveServerEntity<HealthCheckReq, H
     return new HealthCheckRsp(message.toString());
   }
 
-  @Override
-  public void handleReconnect(ClientDescriptor clientDescriptor, byte[] extendedReconnectData) {
+  public ActiveServerEntity.ReconnectHandler startReconnect() {
+    return (ClientDescriptor clientDescriptor, byte[] extendedReconnectData)->{
 
+    };
   }
 
   @Override

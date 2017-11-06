@@ -31,7 +31,7 @@ import java.io.Closeable;
  */
 @CommonComponent
 public interface ManagementService extends Closeable {
-
+    
   void setManagementExecutor(ManagementExecutor managementExecutor);
     
   /**

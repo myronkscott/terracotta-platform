@@ -15,7 +15,6 @@
  */
 package org.terracotta.management.entity.nms.server;
 
-import org.terracotta.entity.IEntityMessenger.ScheduledToken;
 import org.terracotta.management.model.call.ContextualCall;
 import org.terracotta.voltron.proxy.ConcurrencyStrategy;
 import org.terracotta.voltron.proxy.EntityMessenger.Frequency;
@@ -40,5 +39,5 @@ public interface NmsCallback extends Messenger {
   @ConcurrencyStrategy(key = 17)
   @ExecutionStrategy(location = ACTIVE)
   @Frequency(value = 500, unit = MILLISECONDS)
-  ScheduledToken entityCallbackToSendMessagesToClients();
+  void entityCallbackToSendMessagesToClients();
 }

@@ -57,8 +57,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 class ActiveNmsServerEntity extends ActiveProxiedServerEntity<Void, Void, NmsCallback> implements Nms, NmsCallback, ManagementExecutor {
 
-  private static final Comparator<ToSend> MESSAGE_COMPARATOR = Comparator.comparing(toSend -> toSend.message.getSequence());
-
   private static final Logger LOGGER = LoggerFactory.getLogger(ActiveNmsServerEntity.class);
 
   private final ManagementService managementService;
@@ -68,7 +66,7 @@ class ActiveNmsServerEntity extends ActiveProxiedServerEntity<Void, Void, NmsCal
   private final long consumerId;
   // NmsCallback.entityCallbackToSendMessagesToClients() is scheduled to be executed periodically after 500ms.
   //TODO: load test to verify if this queue can leak, otherwise replace by a ring buffer (see git revision fa80424cc4b56826fa0ff184beb605bf1c39ffa4 to have one) 
-  private final BlockingQueue<ToSend> messagesToBeSent = new LinkedBlockingQueue<>();
+//  private final BlockingQueue<ToSend> messagesToBeSent = new LinkedBlockingQueue<>();
 
   ActiveNmsServerEntity(NmsConfig config, ManagementService managementService, EntityManagementRegistry entityManagementRegistry, SharedEntityManagementRegistry sharedEntityManagementRegistry) {
     this.entityManagementRegistry = Objects.requireNonNull(entityManagementRegistry);
@@ -111,7 +109,7 @@ class ActiveNmsServerEntity extends ActiveProxiedServerEntity<Void, Void, NmsCal
   protected void dumpState(StateDumpCollector dump) {
     dump.addState("consumerId", String.valueOf(consumerId));
     dump.addState("stripeName", String.valueOf(stripeName));
-    dump.addState("messageQueueSize", String.valueOf(messagesToBeSent.size()));
+    dump.addState("messageQueueSize", 0);
   }
 
   // NmsCallback
@@ -137,33 +135,8 @@ class ActiveNmsServerEntity extends ActiveProxiedServerEntity<Void, Void, NmsCal
   }
 
   @Override
-  public IEntityMessenger.ScheduledToken entityCallbackToSendMessagesToClients() {
-    List<ToSend> toSends = new ArrayList<>(messagesToBeSent.size());
-    messagesToBeSent.drainTo(toSends);
-    int size = toSends.size();
-    if (size > 0) {
-      LOGGER.trace("[{}] entityCallbackToSendMessagesToClients({})", consumerId, size);
-      if (size > 1) {
-        toSends.sort(MESSAGE_COMPARATOR);
-      }
-      Collection<ClientDescriptor> clients = getClients();
-      for (ToSend toSend : toSends) {
-        toSend.message.unwrap(Contextual.class)
-            .stream()
-            .filter(contextual -> !contextual.getContext().contains(Client.KEY))
-            .forEach(contextual -> contextual.setContext(contextual.getContext().with(Stripe.KEY, stripeName)));
-        try {
-          if (toSend.to == null) {
-            fireMessage(Message.class, toSend.message, false);
-          } else if (clients.contains(toSend.to)) {
-            fireMessage(Message.class, toSend.message, toSend.to);
-          }
-        } catch (Exception e) {
-          LOGGER.warn("Unable to send message " + toSend.message + " : " + e.getMessage(), e);
-        }
-      }
-    }
-    return null;
+  public void entityCallbackToSendMessagesToClients() {
+    
   }
 
   @Override
@@ -236,14 +209,16 @@ class ActiveNmsServerEntity extends ActiveProxiedServerEntity<Void, Void, NmsCal
   @Override
   public void sendMessageToClients(Message message) {
     LOGGER.trace("[{}] sendMessageToClients({}, {})", consumerId, message);
-    messagesToBeSent.offer(new ToSend(message));
+    fireMessage(Message.class, message, false);
+//    messagesToBeSent.offer(new ToSend(message));
   }
 
   @Override
   public void sendMessageToClient(Message message, ClientDescriptor to) {
     if (getClients().contains(to)) {
       LOGGER.trace("[{}] sendMessageToClient({}, {})", consumerId, message, to);
-      messagesToBeSent.offer(new ToSend(message, to));
+      fireMessage(Message.class, message, to);
+//      messagesToBeSent.offer(new ToSend(message, to));
     }
   }
 

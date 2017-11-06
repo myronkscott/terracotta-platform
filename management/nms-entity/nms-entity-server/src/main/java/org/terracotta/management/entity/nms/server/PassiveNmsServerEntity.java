@@ -99,7 +99,7 @@ class PassiveNmsServerEntity extends PassiveProxiedServerEntity implements Nms, 
   }
 
   @Override
-  public IEntityMessenger.ScheduledToken entityCallbackToSendMessagesToClients() {
+  public void entityCallbackToSendMessagesToClients() {
     throw new UnsupportedOperationException("Cannot be called on a passive server");
   }
 

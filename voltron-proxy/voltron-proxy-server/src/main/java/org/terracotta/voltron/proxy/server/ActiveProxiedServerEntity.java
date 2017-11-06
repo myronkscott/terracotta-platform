@@ -62,15 +62,17 @@ public abstract class ActiveProxiedServerEntity<S, R, M extends Messenger> imple
   }
 
   @Override
-  public final void handleReconnect(final ClientDescriptor clientDescriptor, final byte[] extendedReconnectData) {
-    if (reconnectDataType != null && codec != null) {
-      R state = null;
-      if (extendedReconnectData != null && extendedReconnectData.length > 0) {
-        state = codec.decode(reconnectDataType, extendedReconnectData);
+  public ReconnectHandler startReconnect() {
+    return (final ClientDescriptor clientDescriptor, final byte[] extendedReconnectData)->{
+      if (reconnectDataType != null && codec != null) {
+        R state = null;
+        if (extendedReconnectData != null && extendedReconnectData.length > 0) {
+          state = codec.decode(reconnectDataType, extendedReconnectData);
 
+        }
+        onReconnect(clientDescriptor, state);
       }
-      onReconnect(clientDescriptor, state);
-    }
+    };
   }
 
   @Override

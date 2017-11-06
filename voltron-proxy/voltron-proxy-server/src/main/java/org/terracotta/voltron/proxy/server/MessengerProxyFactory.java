@@ -43,34 +43,20 @@ class MessengerProxyFactory {
 
   static <T extends Messenger> T createProxy(Class<T> messengerType, IEntityMessenger entityMessenger) {
     Objects.requireNonNull(messengerType);
-    List<IEntityMessenger.ScheduledToken> tokens = new CopyOnWriteArrayList<>();
     return messengerType.cast(Proxy.newProxyInstance(
         messengerType.getClassLoader(),
         new Class<?>[]{messengerType},
         (proxy, method, args) -> {
 
-          // close() call
-          if (close.equals(method)) {
-            tokens.forEach(entityMessenger::cancelTimedMessage);
-            return null;
-          }
 
           MethodDescriptor methodDescriptor = MethodDescriptor.of(method);
           ProxyEntityMessage proxyEntityMessage = new ProxyEntityMessage(methodDescriptor, args, MessageType.MESSENGER);
 
           // schedule method call after a delay
           long delayMs = methodDescriptor.getDelayMs();
-          if (delayMs > 0) {
-            return entityMessenger.messageSelfAfterDelay(proxyEntityMessage, delayMs);
-          }
 
           // schedule method call at a specific frequency
           long frequencyMs = methodDescriptor.getFrequencyMs();
-          if (frequencyMs > 0) {
-            IEntityMessenger.ScheduledToken token = entityMessenger.messageSelfPeriodically(proxyEntityMessage, frequencyMs);
-            tokens.add(token);
-            return token;
-          }
 
           // just send once
           entityMessenger.messageSelf(proxyEntityMessage);
