@@ -15,13 +15,11 @@
  */
 package org.terracotta.voter;
 
-import com.tc.voter.VoterManager;
-
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-public interface ClientVoterManager extends VoterManager {
+public interface ClientVoterManager {
 
   /**
    * The host and port information of the server that this client is connected to.
@@ -54,10 +52,16 @@ public interface ClientVoterManager extends VoterManager {
   void close();
 
   boolean isVoting();
-
+  
+  boolean isRegistered();
+  
+  long generation();
+  
   void zombie();
 
   boolean isConnected();
+  
+  boolean register(String id) throws TimeoutException;
 
   /**
    * @return the number of voters that have been registered with the server.
@@ -68,4 +72,41 @@ public interface ClientVoterManager extends VoterManager {
    * @return the maximum number of voters that can be registered with the server.
    */
   long getRegisteredVoterLimit() throws TimeoutException;
+
+
+  long HEARTBEAT_RESPONSE = 0;
+  long INVALID_VOTER_RESPONSE = -1;
+
+  /**
+   *
+   * @param id voter id
+   * @return a positive election term number when the server is in election.
+   * 0 if the server is not in election. -1 if the server does not recognise this voter as a valid one.
+   */
+  long heartbeat(String id) throws TimeoutException;
+
+  /**
+   *
+   * @param id the voter id
+   * @return a positive election term number when the server is in election.
+   * 0 if the server is not in election. -1 if the server does not recognise this voter as a valid one.
+   */
+  long vote(String id) throws TimeoutException;
+
+  /**
+   * For casting an override vote during election.
+   * An override vote is accepted by the server if and only if the server is in the middle of an election.
+   * Override votes are ignored if the vote is cast when the server is not in election.
+   *
+   * @param id the voter id
+   */
+  boolean overrideVote(String id) throws TimeoutException;
+
+  /**
+   * De-register the voter with the given id from the server.
+   *
+   * @param id the voter id
+   * @return true if de-registration succeeds. Otherwise false.
+   */
+  boolean deregisterVoter(String id) throws TimeoutException;
 }

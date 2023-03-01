@@ -42,19 +42,19 @@ public class ClientVoterManagerImplTest {
   @Test
   public void testRegister() throws TimeoutException {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "registerVoter", "foo")).thenReturn("123");
-    assertThat(manager.registerVoter("foo"), is(123L));
+    assertThat(manager.register("foo"), is(Boolean.TRUE));
   }
 
   @Test
   public void testRegisterFailure() throws TimeoutException {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "registerVoter", "foo")).thenReturn("-1");
-    assertThat(manager.registerVoter("foo"), is(INVALID_VOTER_RESPONSE));
+    assertThat(manager.register("foo"), is(Boolean.FALSE));
   }
 
   @Test(expected = TimeoutException.class)
   public void testRegisterTimeout() throws TimeoutException {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "registerVoter", "foo")).thenReturn(REQUEST_TIMEOUT);
-    manager.registerVoter("foo");
+    manager.register("foo");
   }
 
   @Test
@@ -80,13 +80,13 @@ public class ClientVoterManagerImplTest {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "vote", "foo:123")).thenReturn("123");
     when(diagnostics.invokeWithArg(MBEAN_NAME, "heartbeat", "foo:123")).thenReturn("123");
     manager.heartbeat("foo:123");
-    assertThat(manager.vote("foo", 123L), is(123L));
+    assertThat(manager.vote("foo"), is(123L));
   }
 
   @Test
   public void testVoteInvalidVoter() throws TimeoutException {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "vote", "foo:123")).thenReturn("-1");
-    manager.vote("foo", 123L);
+    manager.vote("foo");
   }
 
   @Test(expected = TimeoutException.class)
@@ -94,7 +94,7 @@ public class ClientVoterManagerImplTest {
     when(diagnostics.invokeWithArg(MBEAN_NAME, "vote", "foo:123")).thenReturn(REQUEST_TIMEOUT);
     when(diagnostics.invokeWithArg(MBEAN_NAME, "heartbeat", "foo:123")).thenReturn("123");
     manager.heartbeat("foo:123");
-    manager.vote("foo", 123L);
+    manager.vote("foo");
   }
 
   @Test

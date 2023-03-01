@@ -22,12 +22,12 @@ import org.terracotta.connection.Diagnostics;
 import org.terracotta.connection.DiagnosticsFactory;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import static com.tc.voter.VoterManagerMBean.MBEAN_NAME;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ClientVoterManagerImpl implements ClientVoterManager {
 
@@ -39,7 +39,7 @@ public class ClientVoterManagerImpl implements ClientVoterManager {
   public Diagnostics diagnostics;
 
   private volatile boolean voting = false;
-  private volatile long generation = 0;
+  private volatile long generation = -2;
 
   public ClientVoterManagerImpl(String hostPort) {
     this.hostPort = hostPort;
@@ -64,16 +64,19 @@ public class ClientVoterManagerImpl implements ClientVoterManager {
       }
       LOGGER.info("Connected to {}", hostPort);
     } catch (ConnectionException e) {
+      LOGGER.info("Unable to connect to {}", hostPort, e);
       throw new RuntimeException("Unable to connect to " + hostPort, e);
     }
   }
 
   @Override
-  public long registerVoter(String id) throws TimeoutException {
+  public boolean register(String id) throws TimeoutException {
     String result = processInvocation(diagnostics.invokeWithArg(MBEAN_NAME, "registerVoter", id));
     try {
-      return Long.parseLong(result);
+      generation = Long.parseLong(result);
+      return isRegistered();
     } catch (NumberFormatException ne) {
+      generation = -1L;
       LOGGER.info("unexpected value returned for register voter: {}", result);
       throw new RuntimeException("register voter error");
     }
@@ -101,11 +104,11 @@ public class ClientVoterManagerImpl implements ClientVoterManager {
   }
 
   @Override
-  public long vote(String id, long term) throws TimeoutException {
+  public long vote(String id) throws TimeoutException {
     if (!voting) {
       return -1;
     }
-    String result = processInvocation(diagnostics.invokeWithArg(MBEAN_NAME, "vote", id + ":" + term));
+    String result = processInvocation(diagnostics.invokeWithArg(MBEAN_NAME, "vote", id + ":" + generation));
     return Long.parseLong(result);
   }
 
@@ -174,6 +177,16 @@ public class ClientVoterManagerImpl implements ClientVoterManager {
   @Override
   public boolean isVoting() {
     return voting;
+  }
+  
+  @Override
+  public boolean isRegistered() {
+    return generation >= 0;
+  }
+  
+  @Override
+  public long generation() {
+    return generation;
   }
 
   @Override

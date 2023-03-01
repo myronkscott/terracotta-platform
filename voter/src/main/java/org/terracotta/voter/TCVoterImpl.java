@@ -21,9 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 public class TCVoterImpl implements TCVoter {
@@ -31,7 +29,7 @@ public class TCVoterImpl implements TCVoter {
   private static final Logger LOGGER = LoggerFactory.getLogger(TCVoterImpl.class);
 
   protected final String id = UUID.getUUID().toString();
-  private final Map<String, ActiveVoter> registeredClusters = new ConcurrentHashMap<>();
+  private final Map<String, VotingGroup> registeredClusters = new ConcurrentHashMap<>();
   private final Properties connectionProperties;
 
   public TCVoterImpl() {
@@ -68,19 +66,17 @@ public class TCVoterImpl implements TCVoter {
   }
 
   @Override
-  public Future<VoterStatus> register(String clusterName, String... hostPorts) {
-    CompletableFuture<VoterStatus> voterStatusFuture = new CompletableFuture<>();
-    ActiveVoter activeVoter = new ActiveVoter(id, voterStatusFuture, getConnectionProperties(), hostPorts);
+  public VoterStatus register(String clusterName, String... hostPorts) {
+    VotingGroup activeVoter = new VotingGroup(id, getConnectionProperties(), hostPorts);
     if (registeredClusters.putIfAbsent(clusterName, activeVoter) != null) {
       throw new RuntimeException("Another cluster is already registered with the name: " + clusterName);
     }
-    activeVoter.start();
-    return voterStatusFuture;
+    return activeVoter.start();
   }
 
   @Override
   public void deregister(String clusterName) {
-    ActiveVoter voter = registeredClusters.remove(clusterName);
+    VotingGroup voter = registeredClusters.remove(clusterName);
     if (voter != null) {
       try {
         voter.close();
